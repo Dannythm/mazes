@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Kid Maze Explorer 🧩</title>
+
+  <!-- Google Fonts for Kid-friendly UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/theme.css">
+</head>
+<body class="theme-magic">
+
+  <!-- Main Menu Welcome Screen -->
+  <div id="mainMenu" class="main-menu-overlay">
+    <div class="menu-card">
+      <h1 class="menu-title">🧩 Kid Maze Explorer 🧩</h1>
+      <p class="menu-subtitle">Pick your explorer to start playing!</p>
+
+      <div class="menu-profiles-list" id="menuProfilesList">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="menu-actions">
+        <button id="btnMenuNewProfile" class="btn btn-success btn-large">➕ New Player</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="app-container">
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="profile-badge" id="profileBadge" title="Click to Change or Edit Profile">
+        <span class="avatar-icon" id="headerAvatar">🦄</span>
+        <span class="profile-name" id="headerName">Fairy Star</span>
+        <span class="edit-badge">✏️ Edit</span>
+      </div>
+
+      <div class="nav-modes">
+        <button id="btnCustomMode" class="nav-tab active">🎨 Custom Mazes</button>
+        <button id="btnStoryMode" class="nav-tab">⭐️ Story Mode</button>
+      </div>
+
+      <div class="header-actions">
+        <div class="star-counter" id="headerStarCounter">
+          <span class="star-icon">⭐</span>
+          <span id="headerStars">0</span>
+        </div>
+        <button id="btnSoundToggle" class="btn-icon" title="Toggle Sound">🔊</button>
+        <button id="btnThemeToggle" class="btn-icon" title="Switch Theme">🪄</button>
+        <button id="btnHome" class="btn-icon" title="Main Menu">🏠</button>
+      </div>
+    </header>
+
+    <!-- Main Content View -->
+    <main class="main-content">
+
+      <!-- Custom Generator Control Panel -->
+      <section id="customControls" class="control-panel">
+        <div class="control-group">
+          <label>Shape</label>
+          <div class="btn-group" id="shapePicker">
+            <button class="picker-btn active" data-shape="square">🟦 Square</button>
+            <button class="picker-btn" data-shape="rectangle">▭ Rect</button>
+            <button class="picker-btn" data-shape="circle">⭕ Circle</button>
+            <button class="picker-btn" data-shape="triangle">🔺 Triangle</button>
+            <button class="picker-btn" data-shape="hexagon">⬡ Hexagon</button>
+            <button class="picker-btn" data-shape="star">⭐ Star</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Intersection / Mesh Style</label>
+          <div class="btn-group" id="anglePicker">
+            <button class="picker-btn active" data-angle="90">90° Corner</button>
+            <button class="picker-btn" data-angle="rounded">🐍 Serpent Round</button>
+            <button class="picker-btn" data-angle="triangle">🔺 Tri-Mesh</button>
+            <button class="picker-btn" data-angle="hexagonal">⬡ Hex-Mesh</button>
+          </div>
+        </div>
+
+        <div class="control-group slider-group">
+          <div class="slider-header">
+            <label>Complexity & Size</label>
+            <span id="complexityValue">Easy (8x8)</span>
+          </div>
+          <input type="range" id="complexitySlider" min="4" max="50" step="2" value="8">
+          
+          <!-- Visual Difficulty Rating Gauge -->
+          <div class="difficulty-container">
+            <div class="difficulty-bar" id="difficultyBar"></div>
+            <div class="difficulty-label" id="difficultyLabel">EASY</div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Maze Seed (Replay exact maze)</label>
+          <div class="seed-input-row">
+            <input type="text" id="mazeSeedInput" placeholder="Enter seed..." maxlength="12">
+            <button id="btnRandomSeed" class="btn btn-secondary btn-sm" title="Generate New Seed">🎲</button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button id="btnGenerate" class="btn btn-primary">✨ New Maze</button>
+          <button id="btnReset" class="btn btn-secondary">🔄 Reset Path</button>
+        </div>
+      </section>
+
+      <!-- Story Mode Control Panel -->
+      <section id="storyControls" class="control-panel hidden">
+        <div class="story-header">
+          <h2 id="storyWorldTitle">World 1: Magic Forest 🌲</h2>
+          <div class="story-stars-needed" id="storyGateInfo">Gather 25 ⭐ to unlock World 2</div>
+        </div>
+
+        <div class="level-selector" id="levelGrid">
+          <!-- Rendered dynamically (Levels 1 to 10) -->
+        </div>
+
+        <div class="story-actions">
+          <button id="btnResetStory" class="btn btn-secondary">🔄 Reset Level</button>
+        </div>
+      </section>
+
+      <!-- Canvas Play Area -->
+      <section class="game-viewport">
+        <div class="hud-bar">
+          <div class="hud-item">👣 Moves: <span id="hudMoves">0</span></div>
+          <div class="hud-item">
+            ⏱️ Time: <span id="hudTime">0.0s</span>
+            <button id="btnPauseTimer" class="btn-pause-inline" title="Pause / Resume Timer">⏸️</button>
+          </div>
+          <div class="hud-item" id="hudItemsContainer">💎 Items: <span id="hudItems">0/0</span></div>
+        </div>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <canvas id="gameCanvas"></canvas>
+
+          <!-- START MAZE OVERLAY -->
+          <div id="startOverlay" class="start-overlay">
+            <div class="start-box">
+              <h2>READY TO EXPLORE? 🚀</h2>
+              <p>Look at the maze, then click Start when ready!</p>
+              <button id="btnStartMaze" class="btn btn-primary btn-large glow-btn">▶️ START MAZE!</button>
+            </div>
+          </div>
+
+          <!-- PAUSE OVERLAY -->
+          <div id="pauseOverlay" class="start-overlay hidden">
+            <div class="start-box">
+              <h2>⏸️ GAME PAUSED</h2>
+              <p>Take a break! Click Resume when ready to continue.</p>
+              <button id="btnResumeTimer" class="btn btn-primary btn-large glow-btn">▶️ RESUME PLAY!</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-hint">
+          <span>📱 Swipe on iPad / Drag Mouse / Arrow Keys to Move</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Profiles List Modal -->
+    <div id="profileModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Player Profiles 👥</h2>
+          <button class="btn-close" id="btnCloseProfileModal">✖</button>
+        </div>
+
+        <div class="profiles-list" id="profilesList">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="create-profile-box">
+          <h3>Create New Explorer ✨</h3>
+          <div class="form-row">
+            <input type="text" id="newProfileName" placeholder="Enter Name / Nick..." maxlength="16">
+          </div>
+          <div class="form-row">
+            <label>Choose Theme & Avatar:</label>
+            <div class="avatar-picker" id="avatarPicker">
+              <!-- Magic Avatars -->
+              <button class="avatar-opt active" data-avatar="unicorn" data-theme="magic">🦄 Unicorn</button>
+              <button class="avatar-opt" data-avatar="fairy" data-theme="magic">🧚 Fairy</button>
+              <button class="avatar-opt" data-avatar="magic_wand" data-theme="magic">🪄 Wand</button>
+
+              <!-- Space/Dino/Car Avatars -->
+              <button class="avatar-opt" data-avatar="rocket" data-theme="space">🚀 Rocket</button>
+              <button class="avatar-opt" data-avatar="dino" data-theme="space">🦖 T-Rex</button>
+              <button class="avatar-opt" data-avatar="car" data-theme="space">🏎️ Car</button>
+            </div>
+          </div>
+          <button id="btnCreateProfile" class="btn btn-success">➕ Add Profile</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Edit Explorer Profile ✏️</h2>
+          <button class="btn-close" id="btnCloseEditModal">✖</button>
+        </div>
+
+        <div class="create-profile-box">
+          <div class="form-row">
+            <label>Name / Nickname:</label>
+            <input type="text" id="editProfileName" placeholder="Edit Nick..." maxlength="16">
+          </div>
+          <div class="form-row">
+            <label>Avatar & Theme:</label>
+            <div class="avatar-picker" id="editAvatarPicker">
+              <button class="avatar-opt" data-avatar="unicorn" data-theme="magic">🦄 Unicorn</button>
+              <button class="avatar-opt" data-avatar="fairy" data-theme="magic">🧚 Fairy</button>
+              <button class="avatar-opt" data-avatar="magic_wand" data-theme="magic">🪄 Wand</button>
+              <button class="avatar-opt" data-avatar="rocket" data-theme="space">🚀 Rocket</button>
+              <button class="avatar-opt" data-avatar="dino" data-theme="space">🦖 T-Rex</button>
+              <button class="avatar-opt" data-avatar="car" data-theme="space">🏎️ Car</button>
+            </div>
+          </div>
+          <button id="btnSaveEditProfile" class="btn btn-primary">💾 Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victoryModal" class="modal hidden">
+      <div class="modal-content victory-content">
+        <div class="victory-banner">🎉 MAZE SOLVED! 🎉</div>
+        <div class="victory-stars" id="victoryStars">
+          <span class="star lit">⭐</span>
+          <span class="star lit">⭐</span>
+          <span class="star lit">⭐</span>
+        </div>
+        <div class="victory-stats">
+          <p>👣 Movements: <strong id="vicMoves">0</strong></p>
+          <p>⏱️ Time Spent: <strong id="vicTime">0s</strong></p>
+          <p id="vicItemsRow">💎 Items Picked: <strong id="vicItems">0/0</strong></p>
+        </div>
+        <div class="victory-actions">
+          <button id="btnNextMaze" class="btn btn-primary btn-large">➡️ Next Maze!</button>
+          <button id="btnPlayAgain" class="btn btn-secondary">🔄 Play Again</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

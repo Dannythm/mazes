@@ -1,0 +1,110 @@
+/* Theme 1: Magic Forest & Fairies (Pastel Pink/Purple) */
+body.theme-magic {
+  --bg-gradient: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);
+  --primary-color: #9b59b6;
+  --primary-hover: #8e44ad;
+  --secondary-color: #e84393;
+  --accent-color: #fd79a8;
+  --panel-bg: rgba(255, 245, 250, 0.88);
+  --panel-border: rgba(255, 255, 255, 0.8);
+}
+
+body.theme-magic .picker-btn.active,
+body.theme-magic .avatar-opt.active,
+body.theme-magic .nav-tab.active {
+  background: #9b59b6;
+  color: #fff;
+}
+
+body.theme-magic .star-counter {
+  background: #fff0f6;
+  border-color: #ffadd2;
+  color: #c41d7f;
+}
+
+/* Theme 2: Space, Dinosaurs & Cars (High Contrast Cosmic Dark) */
+body.theme-space {
+  --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  --primary-color: #00cec9;
+  --primary-hover: #00b894;
+  --secondary-color: #0984e3;
+  --accent-color: #fdcb6e;
+  --text-color: #ffffff;
+  --panel-bg: rgba(15, 32, 43, 0.92);
+  --panel-border: rgba(0, 206, 201, 0.3);
+}
+
+body.theme-space .app-header,
+body.theme-space .control-panel,
+body.theme-space .game-viewport,
+body.theme-space .modal-content,
+body.theme-space .menu-card,
+body.theme-space .start-box {
+  color: #ffffff;
+  background: rgba(15, 32, 43, 0.95);
+  border-color: rgba(0, 206, 201, 0.4);
+}
+
+body.theme-space .profile-card,
+body.theme-space .menu-profile-item,
+body.theme-space .level-card,
+body.theme-space .profile-badge,
+body.theme-space .btn-icon,
+body.theme-space .picker-btn,
+body.theme-space .avatar-opt {
+  background: #1e272e;
+  color: #ffffff;
+  border-color: #34495e;
+}
+
+body.theme-space .profile-card-name,
+body.theme-space .menu-profile-name,
+body.theme-space .menu-title,
+body.theme-space .modal-header h2,
+body.theme-space .control-group label,
+body.theme-space .slider-header label,
+body.theme-space .start-box h2 {
+  color: #81ecec;
+}
+
+body.theme-space .profile-card-stats,
+body.theme-space .menu-profile-stats,
+body.theme-space .menu-subtitle,
+body.theme-space .input-hint {
+  color: #dfe6e9;
+}
+
+body.theme-space .picker-btn.active,
+body.theme-space .avatar-opt.active,
+body.theme-space .nav-tab.active,
+body.theme-space .profile-card.active,
+body.theme-space .menu-profile-item:hover {
+  background: #00cec9;
+  color: #0f2027;
+  font-weight: 800;
+  border-color: #55efc4;
+}
+
+body.theme-space .hud-bar {
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  border: 1px solid rgba(0, 206, 201, 0.3);
+}
+
+body.theme-space .hud-item span {
+  color: #81ecec;
+}
+
+body.theme-space .canvas-wrapper {
+  background: #1e272e;
+}
+
+body.theme-space input[type=text] {
+  background: #2d3436;
+  color: #ffffff;
+  border-color: #00cec9;
+}
+
+body.theme-space input[type=text]::placeholder {
+  color: #b2bec3;
+}
