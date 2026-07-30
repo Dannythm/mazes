@@ -28,16 +28,10 @@ export class Cell {
     const neighbor = this.neighbors.get(dir);
     if (!neighbor) return;
 
-    if (dir === 'ccw') {
-      neighbor.walls.set('cw', false);
-    } else if (dir.startsWith('out')) {
-      neighbor.walls.set('in', false);
-    } else {
-      for (let [opDir, opCell] of neighbor.neighbors.entries()) {
-        if (opCell === this) {
-          neighbor.walls.set(opDir, false);
-          break;
-        }
+    for (let [opDir, opCell] of neighbor.neighbors.entries()) {
+      if (opCell === this) {
+        neighbor.walls.set(opDir, false);
+        break;
       }
     }
   }
@@ -53,52 +47,81 @@ export class Grid {
     this.startCell = null;
     this.endCell = null;
 
-    this.buildGrid();
+    this.init();
   }
 
-  buildGrid() {
+  init() {
     switch (this.shape) {
-      case 'rectangle': {
-        const isLandscape = (typeof window !== 'undefined') ? (window.innerWidth >= window.innerHeight) : true;
-        if (isLandscape) {
-          this.cols = Math.floor(this.size * 1.3);
-          this.rows = Math.max(4, Math.floor(this.size * 0.7));
-        } else {
-          this.cols = Math.max(4, Math.floor(this.size * 0.7));
-          this.rows = Math.floor(this.size * 1.3);
-        }
+      case 'square':
         this.buildSquareGrid();
         break;
-      }
+      case 'rectangle':
+        this.buildRectangleGrid();
+        break;
+      case 'hexagon':
+        this.buildTrueHexagonGrid();
+        break;
+      case 'triangle':
+        this.buildTrueTriangleGrid();
+        break;
       case 'circle':
         this.buildCircularGrid();
         break;
       case 'star':
         this.buildStarGrid();
         break;
-      case 'triangle':
-        this.buildTrueTriangleGrid();
-        break;
-      case 'hexagon':
-        this.buildTrueHexagonGrid();
-        break;
-      case 'square':
       default:
-        this.rows = this.size;
-        this.cols = this.size;
         this.buildSquareGrid();
-        break;
     }
   }
 
+  // --- 100% SYMMETRIC 1:1 SQUARE GRID ---
   buildSquareGrid() {
     this.cells = [];
+    this.rows = this.size;
+    this.cols = this.size;
     const grid2D = [];
 
     for (let r = 0; r < this.rows; r++) {
       grid2D[r] = [];
       for (let c = 0; c < this.cols; c++) {
         const cell = new Cell(`cell_${r}_${c}`, r, c, 'square');
+        grid2D[r][c] = cell;
+        this.cells.push(cell);
+      }
+    }
+
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        const cell = grid2D[r][c];
+        if (r > 0) cell.addNeighbor('up', grid2D[r - 1][c], 'down');
+        if (c < this.cols - 1) cell.addNeighbor('right', grid2D[r][c + 1], 'left');
+      }
+    }
+
+    this.startCell = grid2D[0][0];
+    this.endCell = grid2D[this.rows - 1][this.cols - 1];
+  }
+
+  // --- 100% SYMMETRIC 1:1 RECTANGLE GRID ---
+  buildRectangleGrid() {
+    this.cells = [];
+    let rCount = this.size;
+    let cCount = Math.floor(this.size * 1.5);
+    
+    if (typeof window !== 'undefined' && window.innerWidth < window.innerHeight) {
+      rCount = Math.floor(this.size * 1.5);
+      cCount = this.size;
+    }
+
+    this.rows = rCount;
+    this.cols = cCount;
+    const grid2D = [];
+
+    for (let r = 0; r < this.rows; r++) {
+      grid2D[r] = [];
+      for (let c = 0; c < this.cols; c++) {
+        const cell = new Cell(`rect_${r}_${c}`, r, c, 'rectangle');
         grid2D[r][c] = cell;
         this.cells.push(cell);
       }
@@ -154,25 +177,18 @@ export class Grid {
       for (let s = 0; s < nSectors; s++) {
         const cell = currentRing[s];
         const nextSector = (s + 1) % nSectors;
-        const prevSector = (s - 1 + nSectors) % nSectors;
 
         // Clockwise & Counter-Clockwise
-        cell.neighbors.set('cw', currentRing[nextSector]);
-        cell.walls.set('cw', true);
-
-        cell.neighbors.set('ccw', currentRing[prevSector]);
+        cell.addNeighbor('cw', currentRing[nextSector], 'ccw');
 
         // Inward neighbor (towards center)
         const innerIdx = (r === 1) ? 0 : Math.floor(s / ratio);
         const innerCell = innerRing[innerIdx];
-        cell.neighbors.set('in', innerCell);
-        cell.walls.set('in', true);
-
-        // Outward neighbor mapping on innerCell
         if (!innerCell.outerCells) innerCell.outerCells = [];
         const outIdx = innerCell.outerCells.length;
         innerCell.outerCells.push(cell);
-        innerCell.neighbors.set(`out_${outIdx}`, cell);
+
+        cell.addNeighbor('in', innerCell, `out_${outIdx}`);
       }
     }
 
@@ -219,25 +235,18 @@ export class Grid {
       for (let s = 0; s < nSectors; s++) {
         const cell = currentRing[s];
         const nextSector = (s + 1) % nSectors;
-        const prevSector = (s - 1 + nSectors) % nSectors;
 
         // Clockwise & Counter-Clockwise
-        cell.neighbors.set('cw', currentRing[nextSector]);
-        cell.walls.set('cw', true);
-
-        cell.neighbors.set('ccw', currentRing[prevSector]);
+        cell.addNeighbor('cw', currentRing[nextSector], 'ccw');
 
         // Inward neighbor (towards center)
         const innerIdx = (r === 1) ? 0 : Math.floor(s / ratio);
         const innerCell = innerRing[innerIdx];
-        cell.neighbors.set('in', innerCell);
-        cell.walls.set('in', true);
-
-        // Outward neighbor mapping on innerCell
         if (!innerCell.outerCells) innerCell.outerCells = [];
         const outIdx = innerCell.outerCells.length;
         innerCell.outerCells.push(cell);
-        innerCell.neighbors.set(`out_${outIdx}`, cell);
+
+        cell.addNeighbor('in', innerCell, `out_${outIdx}`);
       }
     }
 
