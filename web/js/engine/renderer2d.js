@@ -435,14 +435,45 @@ export class Renderer2D {
     return { x, y };
   }
 
-  // --- 5-POINT STAR TRIANGULAR MESH RENDERER ---
-  renderStarTriangular(grid, width, height) {
-    const padding = 40;
-    const side = Math.min((width - padding * 2) / (grid.cols * 0.6), (height - padding * 2) / (grid.rows * 0.866));
+  getStarRadius(angle, outerR) {
+    const innerR = outerR * 0.45;
+    const normAngle = (angle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const sectorAngle = (2 * Math.PI) / 5;
+    const halfSector = sectorAngle / 2;
 
+    const shiftedAngle = (normAngle + Math.PI / 2) % (2 * Math.PI);
+    const localAngle = shiftedAngle % sectorAngle;
+
+    const sinHalf = Math.sin(halfSector);
+    const cosHalf = Math.cos(halfSector);
+    const lA = localAngle <= halfSector ? localAngle : sectorAngle - localAngle;
+    const sinL = Math.sin(lA);
+    const cosL = Math.cos(lA);
+
+    const numerator = outerR * innerR * sinHalf;
+    const denominator = innerR * sinL + outerR * (sinHalf * cosL - cosHalf * sinL);
+    if (denominator === 0) return outerR;
+    return Math.min(outerR, Math.max(innerR, numerator / denominator));
+  }
+
+  getStarCoords(c, cx, cy, totalRings, outerR) {
+    if (c.row === 0) return { x: cx, y: cy };
+    const numS = c.numSectors || 1;
+    const angle = ((c.col + 0.5) / numS) * 2 * Math.PI - Math.PI / 2;
+    const starR = this.getStarRadius(angle, outerR);
+    const r = ((c.row + 0.5) / totalRings) * starR;
+    return {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle)
+    };
+  }
+
+  // --- 5-POINT STAR CONCENTRIC POLAR RENDERER ---
+  renderStarTriangular(grid, width, height) {
     const centerX = width / 2;
     const centerY = height / 2;
     const outerR = Math.min(width, height) / 2 - 36;
+    const totalRings = grid.rings || 4;
 
     this.ctx.beginPath();
     this.ctx.lineWidth = 6;
@@ -450,59 +481,61 @@ export class Renderer2D {
     this.drawStarBoundary(centerX, centerY, outerR, 5);
     this.ctx.stroke();
 
-    this.drawTriangleBrushTrail(this.pathHistory, side, centerX, centerY - (grid.rows * side * 0.4), side * 0.3);
+    const trailPts = this.pathHistory.map(c => this.getStarCoords(c, centerX, centerY, totalRings, outerR));
+    this.drawSmoothBrushTrail(trailPts, (outerR / totalRings) * 0.4);
 
     this.ctx.lineWidth = 3;
     this.ctx.strokeStyle = this.theme === 'space' ? '#81ecec' : '#6c5ce7';
 
     grid.cells.forEach(c => {
-      const pt = this.getTrueTriCentroid(c.row, c.col, side, centerX, centerY - (grid.rows * side * 0.4));
-      const isUpright = c.isUpright;
-      const x = pt.x;
-      const y = pt.y;
+      if (c.row === 0) return;
 
-      this.ctx.beginPath();
-      if (isUpright) {
-        if (c.walls.get('right') !== false) {
-          this.ctx.moveTo(x, y - side * 0.577);
-          this.ctx.lineTo(x + side * 0.5, y + side * 0.288);
+      const r = c.row;
+      const s = c.col;
+      const numS = c.numSectors || 1;
+      const startAngle = (s / numS) * 2 * Math.PI - Math.PI / 2;
+      const endAngle = ((s + 1) / numS) * 2 * Math.PI - Math.PI / 2;
+
+      const starREnd = this.getStarRadius(endAngle, outerR);
+      const rInnerEnd = (r / totalRings) * starREnd;
+      const rOuterEnd = ((r + 1) / totalRings) * starREnd;
+
+      // Draw Inner Star Contour Arc Wall
+      if (c.walls.get('in') !== false) {
+        this.ctx.beginPath();
+        const steps = 6;
+        for (let i = 0; i <= steps; i++) {
+          const a = startAngle + (i / steps) * (endAngle - startAngle);
+          const rad = (r / totalRings) * this.getStarRadius(a, outerR);
+          const px = centerX + rad * Math.cos(a);
+          const py = centerY + rad * Math.sin(a);
+          if (i === 0) this.ctx.moveTo(px, py);
+          else this.ctx.lineTo(px, py);
         }
-        if (c.walls.get('down') !== false) {
-          this.ctx.moveTo(x - side * 0.5, y + side * 0.288);
-          this.ctx.lineTo(x + side * 0.5, y + side * 0.288);
-        }
-        if (c.walls.get('left') !== false) {
-          this.ctx.moveTo(x - side * 0.5, y + side * 0.288);
-          this.ctx.lineTo(x, y - side * 0.577);
-        }
-      } else {
-        if (c.walls.get('right') !== false) {
-          this.ctx.moveTo(x + side * 0.5, y - side * 0.288);
-          this.ctx.lineTo(x, y + side * 0.577);
-        }
-        if (c.walls.get('up') !== false) {
-          this.ctx.moveTo(x - side * 0.5, y - side * 0.288);
-          this.ctx.lineTo(x + side * 0.5, y - side * 0.288);
-        }
-        if (c.walls.get('left') !== false) {
-          this.ctx.moveTo(x - side * 0.5, y - side * 0.288);
-          this.ctx.lineTo(x, y + side * 0.577);
-        }
+        this.ctx.stroke();
       }
-      this.ctx.stroke();
+
+      // Draw Clockwise Radial Wall
+      if (c.walls.get('cw') !== false) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(centerX + rInnerEnd * Math.cos(endAngle), centerY + rInnerEnd * Math.sin(endAngle));
+        this.ctx.lineTo(centerX + rOuterEnd * Math.cos(endAngle), centerY + rOuterEnd * Math.sin(endAngle));
+        this.ctx.stroke();
+      }
     });
 
     if (grid.startCell) {
-      const pt = this.getTrueTriCentroid(grid.startCell.row, grid.startCell.col, side, centerX, centerY - (grid.rows * side * 0.4));
-      this.drawMarker(pt.x, pt.y, side * 0.35, '🏁', 'rgba(0, 184, 148, 0.3)');
+      const sPt = this.getStarCoords(grid.startCell, centerX, centerY, totalRings, outerR);
+      this.drawMarker(sPt.x, sPt.y, (outerR / totalRings) * 0.4, '🏁', 'rgba(0, 184, 148, 0.3)');
     }
     if (grid.endCell) {
-      const pt = this.getTrueTriCentroid(grid.endCell.row, grid.endCell.col, side, centerX, centerY - (grid.rows * side * 0.4));
-      this.drawMarker(pt.x, pt.y, side * 0.38, '🏆', 'rgba(255, 118, 117, 0.3)');
+      const ePt = this.getStarCoords(grid.endCell, centerX, centerY, totalRings, outerR);
+      this.drawMarker(ePt.x, ePt.y, (outerR / totalRings) * 0.4, '🏆', 'rgba(255, 234, 167, 0.4)');
     }
+
     if (this.playerCell) {
-      const pt = this.getTrueTriCentroid(this.playerCell.row, this.playerCell.col, side, centerX, centerY - (grid.rows * side * 0.4));
-      this.drawAvatar(pt.x, pt.y, side * 0.35);
+      const pPt = this.getStarCoords(this.playerCell, centerX, centerY, totalRings, outerR);
+      this.drawAvatar(pPt.x, pPt.y, (outerR / totalRings) * 0.45);
     }
   }
 

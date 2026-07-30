@@ -74,7 +74,7 @@ export class Grid {
         this.buildCircularGrid();
         break;
       case 'star':
-        this.buildStarTriangularGrid();
+        this.buildStarGrid();
         break;
       case 'triangle':
         this.buildTrueTriangleGrid();
@@ -137,6 +137,71 @@ export class Grid {
 
       for (let s = 0; s < numSectors; s++) {
         const cell = new Cell(`c_${r}_${s}`, r, s, 'circle');
+        cell.numSectors = numSectors;
+        ringCells[r].push(cell);
+        this.cells.push(cell);
+      }
+    }
+
+    // Connect neighbors across polar concentric rings:
+    for (let r = 1; r < rings; r++) {
+      const currentRing = ringCells[r];
+      const nSectors = currentRing.length;
+      const innerRing = ringCells[r - 1];
+      const innerNSectors = innerRing.length;
+      const ratio = nSectors / innerNSectors;
+
+      for (let s = 0; s < nSectors; s++) {
+        const cell = currentRing[s];
+        const nextSector = (s + 1) % nSectors;
+        const prevSector = (s - 1 + nSectors) % nSectors;
+
+        // Clockwise & Counter-Clockwise
+        cell.neighbors.set('cw', currentRing[nextSector]);
+        cell.walls.set('cw', true);
+
+        cell.neighbors.set('ccw', currentRing[prevSector]);
+
+        // Inward neighbor (towards center)
+        const innerIdx = (r === 1) ? 0 : Math.floor(s / ratio);
+        const innerCell = innerRing[innerIdx];
+        cell.neighbors.set('in', innerCell);
+        cell.walls.set('in', true);
+
+        // Outward neighbor mapping on innerCell
+        if (!innerCell.outerCells) innerCell.outerCells = [];
+        const outIdx = innerCell.outerCells.length;
+        innerCell.outerCells.push(cell);
+        innerCell.neighbors.set(`out_${outIdx}`, cell);
+      }
+    }
+
+    this.startCell = centerCell;
+    const lastRing = ringCells[rings - 1];
+    this.endCell = lastRing[Math.floor(lastRing.length / 2)];
+  }
+
+  // --- 100% SYMMETRIC 5-POINT STAR CONCENTRIC POLAR GRID ---
+  buildStarGrid() {
+    this.cells = [];
+    const rings = Math.max(3, Math.floor(this.size / 2));
+    this.rings = rings;
+    const ringCells = [];
+
+    // Ring 0: Center Cell
+    const centerCell = new Cell(`c_0_0`, 0, 0, 'star');
+    centerCell.numSectors = 1;
+    ringCells[0] = [centerCell];
+    this.cells.push(centerCell);
+
+    // Rings 1 to rings-1:
+    const sectorCounts = [1, 5, 10, 10, 20, 20, 20, 20, 20];
+    for (let r = 1; r < rings; r++) {
+      const numSectors = sectorCounts[Math.min(r, sectorCounts.length - 1)];
+      ringCells[r] = [];
+
+      for (let s = 0; s < numSectors; s++) {
+        const cell = new Cell(`c_${r}_${s}`, r, s, 'star');
         cell.numSectors = numSectors;
         ringCells[r].push(cell);
         this.cells.push(cell);

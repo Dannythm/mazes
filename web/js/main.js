@@ -420,6 +420,13 @@ class App {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function startApp() {
   window.app = new App();
-});
+  window.gameApp = window.app;
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}

@@ -22,11 +22,6 @@ export class CustomMode {
     // Shape picker
     const shapeBtns = document.querySelectorAll('#shapePicker .picker-btn');
     shapeBtns.forEach(btn => {
-      if (btn.dataset.shape === 'star') {
-        btn.classList.add('disabled');
-        btn.title = 'Star mazes under construction (Coming Soon!)';
-      }
-
       btn.addEventListener('click', () => {
         if (btn.classList.contains('disabled')) return;
         shapeBtns.forEach(b => b.classList.remove('active'));
