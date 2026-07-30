@@ -4,9 +4,9 @@
     "name": "Leto",
     "avatar": "car",
     "theme": "space",
-    "total_solved": 8,
-    "total_moves": 239,
-    "total_time_sec": 77.537,
+    "total_solved": 10,
+    "total_moves": 432,
+    "total_time_sec": 161.24400000000003,
     "total_resets": 0,
     "story_progress": {
       "total_stars": 5,
@@ -36,6 +36,18 @@
       }
     },
     "maze_records": {
+      "circle_24_368752": {
+        "best_moves": 162,
+        "best_time": 69.802,
+        "resets": 0,
+        "times_played": 1
+      },
+      "circle_8_1266974": {
+        "best_moves": 31,
+        "best_time": 13.905,
+        "resets": 0,
+        "times_played": 1
+      },
       "hexagon_12_435218": {
         "best_moves": 40,
         "best_time": 14.406,
@@ -68,7 +80,7 @@
       }
     },
     "created_at": "2026-07-29T22:07:54.9317228+02:00",
-    "updated_at": "2026-07-29T22:55:58.161025+02:00"
+    "updated_at": "2026-07-30T09:27:17.4276445+02:00"
   },
   {
     "id": "prof_magic",
