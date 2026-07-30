@@ -54,28 +54,15 @@ func printQR(portStr string) {
 	fmt.Printf("   🧩 KID MAZE EXPLORER - SERVER STARTED 🧩\n")
 	fmt.Printf("=======================================================\n\n")
 
-	if portStr == ":80" {
-		fmt.Printf(" Open in Browser on Host PC:\n   -> http://localhost/maze\n\n")
-		fmt.Printf(" Access on iPad / Local Network:\n")
-		ips := getLocalIPs()
-		if len(ips) > 0 {
-			for _, ip := range ips {
-				fmt.Printf("   -> http://%s/maze\n", ip)
-			}
-		} else {
-			fmt.Printf("   -> http://<YOUR-PC-IP>/maze\n")
+	fmt.Printf(" Open in Browser on Host PC:\n   -> http://localhost%s/maze\n\n", portStr)
+	fmt.Printf(" Access on iPad / Local Network:\n")
+	ips := getLocalIPs()
+	if len(ips) > 0 {
+		for _, ip := range ips {
+			fmt.Printf("   -> http://%s%s/maze\n", ip, portStr)
 		}
 	} else {
-		fmt.Printf(" Open in Browser on Host PC:\n   -> http://localhost%s/maze\n\n", portStr)
-		fmt.Printf(" Access on iPad / Local Network:\n")
-		ips := getLocalIPs()
-		if len(ips) > 0 {
-			for _, ip := range ips {
-				fmt.Printf("   -> http://%s%s/maze\n", ip, portStr)
-			}
-		} else {
-			fmt.Printf("   -> http://<YOUR-PC-IP>%s/maze\n", portStr)
-		}
+		fmt.Printf("   -> http://<YOUR-PC-IP>%s/maze\n", portStr)
 	}
 
 	fmt.Printf("\n=======================================================\n")
@@ -243,16 +230,10 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})
 
-	// Attempt binding to Port 80 first (for http://localhost/maze without port number)
-	port := ":80"
-	listener, err := net.Listen("tcp", "0.0.0.0:80")
+	port := ":8080"
+	listener, err := net.Listen("tcp", "0.0.0.0"+port)
 	if err != nil {
-		log.Printf("Port 80 unavailable (%v), falling back to :8080", err)
-		port = ":8080"
-		listener, err = net.Listen("tcp", "0.0.0.0:8080")
-		if err != nil {
-			log.Fatalf("Server failed to bind listener: %v", err)
-		}
+		log.Fatalf("Server failed to bind listener: %v", err)
 	}
 
 	printQR(port)
