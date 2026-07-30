@@ -526,6 +526,8 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? '#81ecec' : '#6c5ce7';
 
     grid.cells.forEach(c => {
+      if (c.row === 0) return;
+
       const r = c.row;
       const s = c.col;
       const numS = c.numSectors || 1;
@@ -534,13 +536,15 @@ export class Renderer2D {
       const startAngle = (s / numS) * 2 * Math.PI - Math.PI / 2;
       const endAngle = ((s + 1) / numS) * 2 * Math.PI - Math.PI / 2;
 
-      if (c.walls.get('out') === true) {
+      // Draw Inner Arc Wall at radius rInner
+      if (c.walls.get('in') !== false) {
         this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, rOuter, startAngle, endAngle);
+        this.ctx.arc(centerX, centerY, rInner, startAngle, endAngle);
         this.ctx.stroke();
       }
 
-      if (c.walls.get('cw') === true) {
+      // Draw Clockwise Radial Wall at angle endAngle
+      if (c.walls.get('cw') !== false) {
         this.ctx.beginPath();
         this.ctx.moveTo(centerX + rInner * Math.cos(endAngle), centerY + rInner * Math.sin(endAngle));
         this.ctx.lineTo(centerX + rOuter * Math.cos(endAngle), centerY + rOuter * Math.sin(endAngle));

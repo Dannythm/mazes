@@ -1,4 +1,4 @@
-// Multi-Geometric Grid Topology Engine with Symmetrical Wall Removal
+// Multi-Geometric Grid Topology Engine with Symmetrical Wall Removal & 1:1 Polar Circle Grid
 export class Cell {
   constructor(id, row, col, type = 'square') {
     this.id = id;
@@ -26,7 +26,13 @@ export class Cell {
   removeWall(dir) {
     this.walls.set(dir, false);
     const neighbor = this.neighbors.get(dir);
-    if (neighbor) {
+    if (!neighbor) return;
+
+    if (dir === 'ccw') {
+      neighbor.walls.set('cw', false);
+    } else if (dir.startsWith('out')) {
+      neighbor.walls.set('in', false);
+    } else {
       for (let [opDir, opCell] of neighbor.neighbors.entries()) {
         if (opCell === this) {
           neighbor.walls.set(opDir, false);
@@ -110,17 +116,20 @@ export class Grid {
     this.endCell = grid2D[this.rows - 1][this.cols - 1];
   }
 
-  // --- 100% SYMMETRIC CIRCULAR POLAR GRID ---
+  // --- 100% SYMMETRIC 1:1 CIRCULAR POLAR GRID ---
   buildCircularGrid() {
     this.cells = [];
     const rings = Math.max(3, Math.floor(this.size / 2));
     this.rings = rings;
     const ringCells = [];
 
+    // Ring 0: Center Cell
     const centerCell = new Cell(`c_0_0`, 0, 0, 'circle');
+    centerCell.numSectors = 1;
     ringCells[0] = [centerCell];
     this.cells.push(centerCell);
 
+    // Rings 1 to rings-1:
     for (let r = 1; r < rings; r++) {
       const numSectors = Math.min(24, Math.max(6, r * 6));
       ringCells[r] = [];
@@ -133,6 +142,7 @@ export class Grid {
       }
     }
 
+    // Connect neighbors across polar concentric rings:
     for (let r = 1; r < rings; r++) {
       const currentRing = ringCells[r];
       const nSectors = currentRing.length;
@@ -143,11 +153,25 @@ export class Grid {
       for (let s = 0; s < nSectors; s++) {
         const cell = currentRing[s];
         const nextSector = (s + 1) % nSectors;
-        cell.addNeighbor('cw', currentRing[nextSector], 'ccw');
+        const prevSector = (s - 1 + nSectors) % nSectors;
 
-        const innerIdx = Math.floor(s / ratio);
+        // Clockwise & Counter-Clockwise
+        cell.neighbors.set('cw', currentRing[nextSector]);
+        cell.walls.set('cw', true);
+
+        cell.neighbors.set('ccw', currentRing[prevSector]);
+
+        // Inward neighbor (towards center)
+        const innerIdx = (r === 1) ? 0 : Math.floor(s / ratio);
         const innerCell = innerRing[innerIdx];
-        cell.addNeighbor('in', innerCell, 'out');
+        cell.neighbors.set('in', innerCell);
+        cell.walls.set('in', true);
+
+        // Outward neighbor mapping on innerCell
+        if (!innerCell.outerCells) innerCell.outerCells = [];
+        const outIdx = innerCell.outerCells.length;
+        innerCell.outerCells.push(cell);
+        innerCell.neighbors.set(`out_${outIdx}`, cell);
       }
     }
 
@@ -269,38 +293,41 @@ export class Grid {
   }
 
   randomizeStartAndGoal(rng) {
-    if (!this.cells || this.cells.length < 2) return;
+    if (!this.cells || this.cells.length === 0) return;
 
-    const outerCandidates = this.cells.filter(c => c.neighbors.size <= 3);
-    const startCandidate = outerCandidates.length > 0
-      ? outerCandidates[Math.floor(rng.nextFloat() * outerCandidates.length)]
-      : this.cells[0];
+    const bfs = (startNode) => {
+      const distMap = new Map();
+      const queue = [startNode];
+      distMap.set(startNode, 0);
 
-    const distMap = new Map();
-    const queue = [startCandidate];
-    distMap.set(startCandidate, 0);
+      let maxDist = -1;
+      let farthestCell = startNode;
 
-    let maxDist = 0;
-    let furthestCell = startCandidate;
+      while (queue.length > 0) {
+        const curr = queue.shift();
+        const d = distMap.get(curr);
 
-    while (queue.length > 0) {
-      const curr = queue.shift();
-      const d = distMap.get(curr);
+        if (d > maxDist) {
+          maxDist = d;
+          farthestCell = curr;
+        }
 
-      if (d > maxDist) {
-        maxDist = d;
-        furthestCell = curr;
-      }
-
-      for (let [dir, neighbor] of curr.neighbors.entries()) {
-        if (neighbor && !curr.walls.get(dir) && !distMap.has(neighbor)) {
-          distMap.set(neighbor, d + 1);
-          queue.push(neighbor);
+        for (let [dir, neighbor] of curr.neighbors.entries()) {
+          if (neighbor && curr.walls.get(dir) === false && !distMap.has(neighbor)) {
+            distMap.set(neighbor, d + 1);
+            queue.push(neighbor);
+          }
         }
       }
-    }
 
-    this.startCell = startCandidate;
-    this.endCell = furthestCell;
+      return farthestCell;
+    };
+
+    if (!this.startCell) this.startCell = this.cells[0];
+    const newGoal = bfs(this.startCell);
+    const newStart = bfs(newGoal);
+
+    this.startCell = newStart;
+    this.endCell = newGoal;
   }
 }

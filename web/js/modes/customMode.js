@@ -22,9 +22,9 @@ export class CustomMode {
     // Shape picker
     const shapeBtns = document.querySelectorAll('#shapePicker .picker-btn');
     shapeBtns.forEach(btn => {
-      if (btn.dataset.shape === 'circle' || btn.dataset.shape === 'star') {
+      if (btn.dataset.shape === 'star') {
         btn.classList.add('disabled');
-        btn.title = 'Circle & Star mazes under construction (Coming Soon!)';
+        btn.title = 'Star mazes under construction (Coming Soon!)';
       }
 
       btn.addEventListener('click', () => {
