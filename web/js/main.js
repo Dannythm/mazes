@@ -285,7 +285,12 @@ class App {
 
     let targetDir = rawDir;
 
-    if (this.grid.shape === 'triangle' || this.grid.shape === 'star') {
+    if (this.grid.shape === 'circle' || this.grid.shape === 'star') {
+      if (rawDir === 'up') targetDir = 'out';
+      else if (rawDir === 'down') targetDir = 'in';
+      else if (rawDir === 'right') targetDir = 'cw';
+      else if (rawDir === 'left') targetDir = 'ccw';
+    } else if (this.grid.shape === 'triangle') {
       if (rawDir === 'left') targetDir = 'left';
       else if (rawDir === 'right') targetDir = 'right';
       else if (rawDir === 'up') {
@@ -293,11 +298,6 @@ class App {
       } else if (rawDir === 'down') {
         targetDir = this.playerCell.isUpright ? 'down' : (this.playerCell.walls.get('left') === false ? 'left' : 'right');
       }
-    } else if (this.grid.shape === 'circle') {
-      if (rawDir === 'up') targetDir = 'out';
-      else if (rawDir === 'down') targetDir = 'in';
-      else if (rawDir === 'right') targetDir = 'cw';
-      else if (rawDir === 'left') targetDir = 'ccw';
     } else if (this.grid.shape === 'hexagon') {
       targetDir = hexDir || rawDir;
       if (rawDir === 'up') {
@@ -307,7 +307,18 @@ class App {
       }
     }
 
-    if (this.playerCell.walls.get(targetDir) === false) {
+    if (targetDir === 'out') {
+      if (this.playerCell.walls.get('out') === false && this.playerCell.neighbors.get('out')) {
+        this.moveToCell(this.playerCell.neighbors.get('out'));
+        return;
+      }
+      for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
+        if (dir.startsWith('out') && this.playerCell.walls.get(dir) === false) {
+          this.moveToCell(neighbor);
+          return;
+        }
+      }
+    } else if (this.playerCell.walls.get(targetDir) === false) {
       const neighbor = this.playerCell.neighbors.get(targetDir);
       if (neighbor) {
         this.moveToCell(neighbor);
