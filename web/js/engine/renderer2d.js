@@ -436,24 +436,19 @@ export class Renderer2D {
   }
 
   getStarRadius(angle, outerR) {
-    const innerR = outerR * 0.45;
-    const normAngle = (angle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-    const sectorAngle = (2 * Math.PI) / 5;
-    const halfSector = sectorAngle / 2;
+    const innerR = outerR * 0.5;
+    const alpha = Math.PI / 5; // 36 degrees
+    const sectorAngle = (2 * Math.PI) / 5; // 72 degrees
 
+    const normAngle = (angle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
     const shiftedAngle = (normAngle + Math.PI / 2) % (2 * Math.PI);
     const localAngle = shiftedAngle % sectorAngle;
+    const phi = localAngle <= alpha ? localAngle : sectorAngle - localAngle;
 
-    const sinHalf = Math.sin(halfSector);
-    const cosHalf = Math.cos(halfSector);
-    const lA = localAngle <= halfSector ? localAngle : sectorAngle - localAngle;
-    const sinL = Math.sin(lA);
-    const cosL = Math.cos(lA);
-
-    const numerator = outerR * innerR * sinHalf;
-    const denominator = innerR * sinL + outerR * (sinHalf * cosL - cosHalf * sinL);
+    const numerator = outerR * innerR * Math.sin(alpha);
+    const denominator = innerR * Math.sin(alpha - phi) + outerR * Math.sin(phi);
     if (denominator === 0) return outerR;
-    return Math.min(outerR, Math.max(innerR, numerator / denominator));
+    return numerator / denominator;
   }
 
   getStarCoords(c, cx, cy, totalRings, outerR) {
@@ -643,9 +638,8 @@ export class Renderer2D {
         const side = Math.min((width - 80) / (numRows * 1.1), (height - 80) / (numRows * 0.866));
         pt = this.getTrueTriCentroid(c.row, c.col, side, width / 2, (height - numRows * side * 0.866) / 2 + 10);
       } else if (grid.shape === 'star') {
-        const numRows = grid.rows || 6;
-        const side = Math.min((width - 80) / (grid.cols * 0.6), (height - 80) / (grid.rows * 0.866));
-        pt = this.getTrueTriCentroid(c.row, c.col, side, width / 2, height / 2 - (grid.rows * side * 0.4));
+        const maxR = Math.min(width, height) / 2 - 36;
+        pt = this.getStarCoords(c, width / 2, height / 2, grid.rings || 4, maxR);
       } else if (grid.shape === 'circle') {
         const maxR = Math.min(width, height) / 2 - 36;
         const ringSpacing = maxR / (grid.rings || 4);
