@@ -285,7 +285,15 @@ class App {
 
     let targetDir = rawDir;
 
-    if (this.grid.shape === 'circle') {
+    if (this.grid.shape === 'triangle' || this.grid.shape === 'star') {
+      if (rawDir === 'left') targetDir = 'left';
+      else if (rawDir === 'right') targetDir = 'right';
+      else if (rawDir === 'up') {
+        targetDir = !this.playerCell.isUpright ? 'up' : (this.playerCell.walls.get('left') === false ? 'left' : 'right');
+      } else if (rawDir === 'down') {
+        targetDir = this.playerCell.isUpright ? 'down' : (this.playerCell.walls.get('left') === false ? 'left' : 'right');
+      }
+    } else if (this.grid.shape === 'circle') {
       if (rawDir === 'up') targetDir = 'out';
       else if (rawDir === 'down') targetDir = 'in';
       else if (rawDir === 'right') targetDir = 'cw';

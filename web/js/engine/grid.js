@@ -181,69 +181,93 @@ export class Grid {
     this.endCell = lastRing[Math.floor(lastRing.length / 2)];
   }
 
-  // --- 100% SYMMETRIC 5-POINT STAR CONCENTRIC POLAR GRID ---
+  isPointInStar(x, y, cx, cy, outerR, innerRRatio = 0.5) {
+    const innerR = outerR * innerRRatio;
+    const vertices = [];
+    for (let i = 0; i < 10; i++) {
+      const r = (i % 2 === 0) ? outerR : innerR;
+      const angle = i * (Math.PI / 5) - (Math.PI / 2);
+      vertices.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+    }
+
+    let inside = false;
+    const n = vertices.length;
+    let p1 = vertices[0];
+    for (let i = 0; i <= n; i++) {
+      const p2 = vertices[i % n];
+      if (y > Math.min(p1.y, p2.y)) {
+        if (y <= Math.max(p1.y, p2.y)) {
+          if (x <= Math.max(p1.x, p2.x)) {
+            if (p1.y !== p2.y) {
+              const xinters = (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;
+              if (p1.x === p2.x || x <= xinters) {
+                inside = !inside;
+              }
+            }
+          }
+        }
+      }
+      p1 = p2;
+    }
+    return inside;
+  }
+
+  // --- 5-POINT STAR TRIANGULAR MESH GRID ---
   buildStarGrid() {
     this.cells = [];
-    const rings = Math.max(3, Math.floor(this.size / 2));
-    this.rings = rings;
-    const ringCells = [];
+    const size = this.size;
+    const outerR = 300.0;
+    const cx = 400.0;
+    const cy = 400.0;
+    const hCount = Math.max(8, Math.floor(size * 1.6));
+    const side = (outerR * 2) / hCount;
+    const h = side * 0.866;
 
-    // Ring 0: Center Cell
-    const centerCell = new Cell(`c_0_0`, 0, 0, 'star');
-    centerCell.numSectors = 1;
-    ringCells[0] = [centerCell];
-    this.cells.push(centerCell);
+    const rows = Math.floor((outerR * 2) / h) + 2;
+    const cols = Math.floor((outerR * 2) / (side * 0.5)) + 2;
+    this.rows = rows;
+    this.cols = cols;
+    this.starSide = side;
 
-    // Rings 1 to rings-1:
-    const sectorCounts = [1, 5, 10, 10, 20, 20, 20, 20, 20];
-    for (let r = 1; r < rings; r++) {
-      const numSectors = sectorCounts[Math.min(r, sectorCounts.length - 1)];
-      ringCells[r] = [];
+    const cellMap = new Map();
 
-      for (let s = 0; s < numSectors; s++) {
-        const cell = new Cell(`c_${r}_${s}`, r, s, 'star');
-        cell.numSectors = numSectors;
-        ringCells[r].push(cell);
-        this.cells.push(cell);
+    for (let r = 0; r < rows; r++) {
+      const y = cy - outerR + (r + 0.5) * h;
+      for (let c = 0; c < cols; c++) {
+        const x = cx - outerR + (c + 0.5) * (side * 0.5);
+        if (this.isPointInStar(x, y, cx, cy, outerR)) {
+          const isUpright = (r + c) % 2 === 0;
+          const cell = new Cell(`star_${r}_${c}`, r, c, 'star');
+          cell.isUpright = isUpright;
+          cellMap.set(`${r}_${c}`, cell);
+          this.cells.push(cell);
+        }
       }
     }
 
-    // Connect neighbors across polar concentric rings:
-    for (let r = 1; r < rings; r++) {
-      const currentRing = ringCells[r];
-      const nSectors = currentRing.length;
-      const innerRing = ringCells[r - 1];
-      const innerNSectors = innerRing.length;
-      const ratio = nSectors / innerNSectors;
+    // Connect neighbors
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cell = cellMap.get(`${r}_${c}`);
+        if (!cell) continue;
 
-      for (let s = 0; s < nSectors; s++) {
-        const cell = currentRing[s];
-        const nextSector = (s + 1) % nSectors;
-        const prevSector = (s - 1 + nSectors) % nSectors;
-
-        // Clockwise & Counter-Clockwise
-        cell.neighbors.set('cw', currentRing[nextSector]);
-        cell.walls.set('cw', true);
-
-        cell.neighbors.set('ccw', currentRing[prevSector]);
-
-        // Inward neighbor (towards center)
-        const innerIdx = (r === 1) ? 0 : Math.floor(s / ratio);
-        const innerCell = innerRing[innerIdx];
-        cell.neighbors.set('in', innerCell);
-        cell.walls.set('in', true);
-
-        // Outward neighbor mapping on innerCell
-        if (!innerCell.outerCells) innerCell.outerCells = [];
-        const outIdx = innerCell.outerCells.length;
-        innerCell.outerCells.push(cell);
-        innerCell.neighbors.set(`out_${outIdx}`, cell);
+        const rightCell = cellMap.get(`${r}_${c + 1}`);
+        if (rightCell) {
+          cell.addNeighbor('right', rightCell, 'left');
+        }
+        if (cell.isUpright) {
+          const downCell = cellMap.get(`${r + 1}_${c}`);
+          if (downCell) {
+            cell.addNeighbor('down', downCell, 'up');
+          }
+        }
       }
     }
 
-    this.startCell = centerCell;
-    const lastRing = ringCells[rings - 1];
-    this.endCell = lastRing[Math.floor(lastRing.length / 2)];
+    if (this.cells.length > 0) {
+      this.startCell = this.cells[0];
+      this.endCell = this.cells[this.cells.length - 1];
+    }
   }
 
   // --- 5-POINT STAR TRIANGULAR MESH GRID ---
