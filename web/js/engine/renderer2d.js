@@ -452,7 +452,7 @@ export class Renderer2D {
   }
 
   getStarCoords(c, cx, cy, totalRings, outerR) {
-    if (c.row === 0) return { x: cx, y: cy };
+    if (!c || c.row === 0) return { x: cx, y: cy };
     const numS = c.numSectors || 1;
     const angle = ((c.col + 0.5) / numS) * 2 * Math.PI - Math.PI / 2;
     const starR = this.getStarRadius(angle, outerR);
@@ -461,6 +461,83 @@ export class Renderer2D {
       x: cx + r * Math.cos(angle),
       y: cy + r * Math.sin(angle)
     };
+  }
+
+  drawPolarTrail(pathHistory, grid, centerX, centerY, outerR) {
+    if (!pathHistory || pathHistory.length < 2) return;
+
+    const totalRings = grid.rings || 4;
+    const isStar = grid.shape === 'star';
+
+    const getCellAngle = (c) => {
+      if (c.row === 0) return -Math.PI / 2;
+      const numS = c.numSectors || 1;
+      return ((c.col + 0.5) / numS) * 2 * Math.PI - Math.PI / 2;
+    };
+
+    const getCellRadiusRatio = (c) => {
+      if (c.row === 0) return 0;
+      return (c.row + 0.5) / totalRings;
+    };
+
+    const getPointAt = (rRatio, angle) => {
+      const R = isStar ? this.getStarRadius(angle, outerR) : outerR;
+      const r = rRatio * R;
+      return {
+        x: centerX + r * Math.cos(angle),
+        y: centerY + r * Math.sin(angle)
+      };
+    };
+
+    const tracePath = (ctx) => {
+      ctx.beginPath();
+      const startPt = getPointAt(getCellRadiusRatio(pathHistory[0]), getCellAngle(pathHistory[0]));
+      ctx.moveTo(startPt.x, startPt.y);
+
+      for (let i = 0; i < pathHistory.length - 1; i++) {
+        const cCurr = pathHistory[i];
+        const cNext = pathHistory[i + 1];
+
+        const r1 = getCellRadiusRatio(cCurr);
+        const r2 = getCellRadiusRatio(cNext);
+        const a1 = getCellAngle(cCurr);
+        const a2 = getCellAngle(cNext);
+
+        if (cCurr.row === cNext.row && cCurr.row > 0) {
+          let dAngle = a2 - a1;
+          while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
+          while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
+
+          const steps = Math.max(4, Math.ceil(Math.abs(dAngle) / (Math.PI / 18)));
+          for (let s = 1; s <= steps; s++) {
+            const a = a1 + (s / steps) * dAngle;
+            const pt = getPointAt(r1, a);
+            ctx.lineTo(pt.x, pt.y);
+          }
+        } else {
+          const pt2 = getPointAt(r2, a2);
+          ctx.lineTo(pt2.x, pt2.y);
+        }
+      }
+    };
+
+    const brushWidth = Math.max(6, (outerR / totalRings) * 0.35);
+
+    // Pass 1: Soft Translucent Outer Glow
+    this.ctx.lineWidth = brushWidth * 1.4;
+    this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    tracePath(this.ctx);
+    this.ctx.stroke();
+
+    // Pass 2: Solid Core
+    this.ctx.lineWidth = brushWidth;
+    this.ctx.strokeStyle = this.theme === 'space' ? '#00cec9' : '#e84393';
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    tracePath(this.ctx);
+    this.ctx.stroke();
   }
 
   // --- 5-POINT STAR CONCENTRIC POLAR RENDERER ---
@@ -476,8 +553,7 @@ export class Renderer2D {
     this.drawStarBoundary(centerX, centerY, outerR, 5);
     this.ctx.stroke();
 
-    const trailPts = this.pathHistory.map(c => this.getStarCoords(c, centerX, centerY, totalRings, outerR));
-    this.drawSmoothBrushTrail(trailPts, (outerR / totalRings) * 0.4);
+    this.drawPolarTrail(this.pathHistory, grid, centerX, centerY, outerR);
 
     this.ctx.lineWidth = 3;
     this.ctx.strokeStyle = this.theme === 'space' ? '#81ecec' : '#6c5ce7';
@@ -547,8 +623,7 @@ export class Renderer2D {
     this.ctx.arc(centerX, centerY, maxRadius, 0, Math.PI * 2);
     this.ctx.stroke();
 
-    const trailPts = this.pathHistory.map(c => this.getPolarCoords(c, centerX, centerY, ringSpacing));
-    this.drawSmoothBrushTrail(trailPts, ringSpacing * 0.4);
+    this.drawPolarTrail(this.pathHistory, grid, centerX, centerY, maxRadius);
 
     this.ctx.lineWidth = 3;
     this.ctx.strokeStyle = this.theme === 'space' ? '#81ecec' : '#6c5ce7';

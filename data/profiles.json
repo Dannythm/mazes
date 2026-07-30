@@ -1,71 +1,12 @@
 [
   {
-    "id": "prof_space",
-    "name": "Space Explorer",
-    "avatar": "rocket",
-    "theme": "space",
-    "total_solved": 7,
-    "total_moves": 235,
-    "total_time_sec": 243.345,
-    "total_resets": 0,
-    "story_progress": {
-      "total_stars": 6,
-      "unlocked_chapter": 1,
-      "unlocked_level": 3,
-      "level_stars": {
-        "ch1_lvl1": 3,
-        "ch1_lvl2": 3
-      },
-      "level_scores": {
-        "ch1_lvl1": {
-          "stars": 3,
-          "moves": 16,
-          "time_sec": 7.112,
-          "items_collected": 1,
-          "total_items": 1,
-          "completed_at": "2026-07-29T22:00:55.3826344+02:00"
-        },
-        "ch1_lvl2": {
-          "stars": 3,
-          "moves": 38,
-          "time_sec": 124.508,
-          "items_collected": 2,
-          "total_items": 2,
-          "completed_at": "2026-07-29T22:03:30.5344172+02:00"
-        }
-      }
-    },
-    "maze_records": {
-      "hexagon_18_448427": {
-        "best_moves": 69,
-        "best_time": 62.203,
-        "resets": 0,
-        "times_played": 1
-      },
-      "rectangle_8_448427": {
-        "best_moves": 34,
-        "best_time": 8.704,
-        "resets": 0,
-        "times_played": 1
-      },
-      "square_8": {
-        "best_moves": 42,
-        "best_time": 25.4,
-        "resets": 0,
-        "times_played": 1
-      }
-    },
-    "created_at": "2026-07-29T21:54:15.0182462+02:00",
-    "updated_at": "2026-07-29T23:34:39.2712129+02:00"
-  },
-  {
     "id": "prof_1785355674931722800",
     "name": "Leto",
     "avatar": "car",
     "theme": "space",
-    "total_solved": 10,
-    "total_moves": 432,
-    "total_time_sec": 161.24400000000003,
+    "total_solved": 14,
+    "total_moves": 535,
+    "total_time_sec": 204.55300000000003,
     "total_resets": 0,
     "story_progress": {
       "total_stars": 5,
@@ -102,10 +43,10 @@
         "times_played": 1
       },
       "circle_8_1266974": {
-        "best_moves": 31,
-        "best_time": 13.905,
+        "best_moves": 28,
+        "best_time": 9.302,
         "resets": 0,
-        "times_played": 1
+        "times_played": 2
       },
       "hexagon_12_435218": {
         "best_moves": 40,
@@ -117,7 +58,7 @@
         "best_moves": 12,
         "best_time": 5.102,
         "resets": 0,
-        "times_played": 1
+        "times_played": 2
       },
       "rectangle_8_1266974": {
         "best_moves": 15,
@@ -136,10 +77,16 @@
         "best_time": 12.406,
         "resets": 0,
         "times_played": 1
+      },
+      "star_8_1266974": {
+        "best_moves": 29,
+        "best_time": 14.001,
+        "resets": 0,
+        "times_played": 2
       }
     },
     "created_at": "2026-07-29T22:07:54.9317228+02:00",
-    "updated_at": "2026-07-30T09:27:17.4276445+02:00"
+    "updated_at": "2026-07-30T13:19:38.9987061+02:00"
   },
   {
     "id": "prof_magic",
@@ -209,5 +156,64 @@
     },
     "created_at": "2026-07-29T21:54:15.0182462+02:00",
     "updated_at": "2026-07-30T09:37:17.446979+02:00"
+  },
+  {
+    "id": "prof_space",
+    "name": "Space Explorer",
+    "avatar": "rocket",
+    "theme": "space",
+    "total_solved": 7,
+    "total_moves": 235,
+    "total_time_sec": 243.345,
+    "total_resets": 0,
+    "story_progress": {
+      "total_stars": 6,
+      "unlocked_chapter": 1,
+      "unlocked_level": 3,
+      "level_stars": {
+        "ch1_lvl1": 3,
+        "ch1_lvl2": 3
+      },
+      "level_scores": {
+        "ch1_lvl1": {
+          "stars": 3,
+          "moves": 16,
+          "time_sec": 7.112,
+          "items_collected": 1,
+          "total_items": 1,
+          "completed_at": "2026-07-29T22:00:55.3826344+02:00"
+        },
+        "ch1_lvl2": {
+          "stars": 3,
+          "moves": 38,
+          "time_sec": 124.508,
+          "items_collected": 2,
+          "total_items": 2,
+          "completed_at": "2026-07-29T22:03:30.5344172+02:00"
+        }
+      }
+    },
+    "maze_records": {
+      "hexagon_18_448427": {
+        "best_moves": 69,
+        "best_time": 62.203,
+        "resets": 0,
+        "times_played": 1
+      },
+      "rectangle_8_448427": {
+        "best_moves": 34,
+        "best_time": 8.704,
+        "resets": 0,
+        "times_played": 1
+      },
+      "square_8": {
+        "best_moves": 42,
+        "best_time": 25.4,
+        "resets": 0,
+        "times_played": 1
+      }
+    },
+    "created_at": "2026-07-29T21:54:15.0182462+02:00",
+    "updated_at": "2026-07-29T23:34:39.2712129+02:00"
   }
 ]

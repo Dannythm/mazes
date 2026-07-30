@@ -269,25 +269,35 @@ class App {
   handlePointerDrag(pointerX, pointerY) {
     if (!this.gameStarted || this.isPaused || !this.grid || !this.playerCell) return;
 
-    const currentPos = this.renderer.getCellScreenPos(this.playerCell, this.grid);
-    const currDist = Math.hypot(pointerX - currentPos.x, pointerY - currentPos.y);
+    let stepCount = 0;
+    const maxStepsPerFrame = 4;
 
-    let bestNeighbor = null;
-    let bestDist = currDist;
+    while (stepCount < maxStepsPerFrame) {
+      const currentPos = this.renderer.getCellScreenPos(this.playerCell, this.grid);
+      const currDist = Math.hypot(pointerX - currentPos.x, pointerY - currentPos.y);
 
-    for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
-      if (neighbor && this.playerCell.walls.get(dir) === false) {
-        const pos = this.renderer.getCellScreenPos(neighbor, this.grid);
-        const dist = Math.hypot(pointerX - pos.x, pointerY - pos.y);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestNeighbor = neighbor;
+      if (currDist < 10) break;
+
+      let bestNeighbor = null;
+      let bestDist = currDist;
+
+      for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
+        if (neighbor && this.playerCell.walls.get(dir) === false) {
+          const pos = this.renderer.getCellScreenPos(neighbor, this.grid);
+          const dist = Math.hypot(pointerX - pos.x, pointerY - pos.y);
+          if (dist < bestDist - 2) {
+            bestDist = dist;
+            bestNeighbor = neighbor;
+          }
         }
       }
-    }
 
-    if (bestNeighbor) {
-      this.moveToCell(bestNeighbor);
+      if (bestNeighbor) {
+        this.moveToCell(bestNeighbor);
+        stepCount++;
+      } else {
+        break;
+      }
     }
   }
 
@@ -317,8 +327,7 @@ class App {
     }
 
     const currentPos = this.renderer.getCellScreenPos(this.playerCell, this.grid);
-    let bestNeighbor = null;
-    let maxDot = -Infinity;
+    const openNeighbors = [];
 
     for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
       if (neighbor && this.playerCell.walls.get(dir) === false) {
@@ -330,11 +339,25 @@ class App {
           const nx = vx / len;
           const ny = vy / len;
           const dot = nx * targetVec.x + ny * targetVec.y;
-          if (dot > 0.15 && dot > maxDot) {
-            maxDot = dot;
-            bestNeighbor = neighbor;
-          }
+          openNeighbors.push({ neighbor, dot, isPrev: (this.pathHistory.length >= 2 && neighbor === this.pathHistory[this.pathHistory.length - 2]) });
         }
+      }
+    }
+
+    let bestNeighbor = null;
+    let maxDot = -Infinity;
+
+    for (let item of openNeighbors) {
+      if (item.dot > 0.10 && item.dot > maxDot) {
+        maxDot = item.dot;
+        bestNeighbor = item.neighbor;
+      }
+    }
+
+    if (!bestNeighbor) {
+      const nonBackNeighbors = openNeighbors.filter(n => !n.isPrev);
+      if (nonBackNeighbors.length === 1 && nonBackNeighbors[0].dot > -0.5) {
+        bestNeighbor = nonBackNeighbors[0].neighbor;
       }
     }
 

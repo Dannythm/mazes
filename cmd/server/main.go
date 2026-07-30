@@ -230,13 +230,22 @@ func main() {
 		fs.ServeHTTP(w, r)
 	})
 
-	port := ":8080"
-	listener, err := net.Listen("tcp", "0.0.0.0"+port)
+	port := ":80"
+	listener, err := net.Listen("tcp", "0.0.0.0:80")
 	if err != nil {
-		log.Fatalf("Server failed to bind listener: %v", err)
+		port = ":8080"
+		listener, err = net.Listen("tcp", "0.0.0.0:8080")
+		if err != nil {
+			log.Fatalf("Server failed to bind listener: %v", err)
+		}
 	}
 
-	printQR(port)
+	portStr := port
+	if port == ":80" {
+		portStr = ""
+	}
+
+	printQR(portStr)
 	if err := http.Serve(listener, nil); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}

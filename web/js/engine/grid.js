@@ -211,7 +211,7 @@ export class Grid {
     this.cells.push(centerCell);
 
     // Rings 1 to rings-1:
-    const sectorCounts = [1, 5, 10, 10, 20, 20, 20, 20, 20];
+    const sectorCounts = [1, 5, 10, 10, 20, 20, 40, 40, 40];
     for (let r = 1; r < rings; r++) {
       const numSectors = sectorCounts[Math.min(r, sectorCounts.length - 1)];
       ringCells[r] = [];
