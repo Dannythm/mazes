@@ -269,60 +269,77 @@ class App {
   handlePointerDrag(pointerX, pointerY) {
     if (!this.gameStarted || this.isPaused || !this.grid || !this.playerCell) return;
 
-    const targetCell = this.renderer.findCellAtPointer(this.grid, pointerX, pointerY);
-    if (!targetCell || targetCell === this.playerCell) return;
+    const currentPos = this.renderer.getCellScreenPos(this.playerCell, this.grid);
+    const currDist = Math.hypot(pointerX - currentPos.x, pointerY - currentPos.y);
+
+    let bestNeighbor = null;
+    let bestDist = currDist;
 
     for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
-      if (neighbor === targetCell && this.playerCell.walls.get(dir) === false) {
-        this.moveToCell(neighbor);
-        break;
+      if (neighbor && this.playerCell.walls.get(dir) === false) {
+        const pos = this.renderer.getCellScreenPos(neighbor, this.grid);
+        const dist = Math.hypot(pointerX - pos.x, pointerY - pos.y);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestNeighbor = neighbor;
+        }
       }
+    }
+
+    if (bestNeighbor) {
+      this.moveToCell(bestNeighbor);
     }
   }
 
   handleDirection(rawDir, hexDir) {
     if (!this.gameStarted || this.isPaused || !this.grid || !this.playerCell) return;
 
-    let targetDir = rawDir;
-
-    if (this.grid.shape === 'circle' || this.grid.shape === 'star') {
-      if (rawDir === 'up') targetDir = 'out';
-      else if (rawDir === 'down') targetDir = 'in';
-      else if (rawDir === 'right') targetDir = 'cw';
-      else if (rawDir === 'left') targetDir = 'ccw';
-    } else if (this.grid.shape === 'triangle') {
-      if (rawDir === 'left') targetDir = 'left';
-      else if (rawDir === 'right') targetDir = 'right';
-      else if (rawDir === 'up') {
-        targetDir = !this.playerCell.isUpright ? 'up' : (this.playerCell.walls.get('left') === false ? 'left' : 'right');
-      } else if (rawDir === 'down') {
-        targetDir = this.playerCell.isUpright ? 'down' : (this.playerCell.walls.get('left') === false ? 'left' : 'right');
-      }
-    } else if (this.grid.shape === 'hexagon') {
-      targetDir = hexDir || rawDir;
-      if (rawDir === 'up') {
-        targetDir = this.playerCell.walls.get('up-left') === false ? 'up-left' : 'up-right';
-      } else if (rawDir === 'down') {
-        targetDir = this.playerCell.walls.get('down-right') === false ? 'down-right' : 'down-left';
-      }
+    let targetVec = { x: 0, y: 0 };
+    switch (rawDir) {
+      case 'up': targetVec = { x: 0, y: -1 }; break;
+      case 'down': targetVec = { x: 0, y: 1 }; break;
+      case 'left': targetVec = { x: -1, y: 0 }; break;
+      case 'right': targetVec = { x: 1, y: 0 }; break;
+      case 'up-left': targetVec = { x: -0.707, y: -0.707 }; break;
+      case 'up-right': targetVec = { x: 0.707, y: -0.707 }; break;
+      case 'down-left': targetVec = { x: -0.707, y: 0.707 }; break;
+      case 'down-right': targetVec = { x: 0.707, y: 0.707 }; break;
     }
 
-    if (targetDir === 'out') {
-      if (this.playerCell.walls.get('out') === false && this.playerCell.neighbors.get('out')) {
-        this.moveToCell(this.playerCell.neighbors.get('out'));
-        return;
-      }
-      for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
-        if (dir.startsWith('out') && this.playerCell.walls.get(dir) === false) {
+    if (this.grid.shape === 'square' || this.grid.shape === 'rectangle') {
+      if (this.playerCell.walls.get(rawDir) === false) {
+        const neighbor = this.playerCell.neighbors.get(rawDir);
+        if (neighbor) {
           this.moveToCell(neighbor);
           return;
         }
       }
-    } else if (this.playerCell.walls.get(targetDir) === false) {
-      const neighbor = this.playerCell.neighbors.get(targetDir);
-      if (neighbor) {
-        this.moveToCell(neighbor);
+    }
+
+    const currentPos = this.renderer.getCellScreenPos(this.playerCell, this.grid);
+    let bestNeighbor = null;
+    let maxDot = -Infinity;
+
+    for (let [dir, neighbor] of this.playerCell.neighbors.entries()) {
+      if (neighbor && this.playerCell.walls.get(dir) === false) {
+        const neighborPos = this.renderer.getCellScreenPos(neighbor, this.grid);
+        const vx = neighborPos.x - currentPos.x;
+        const vy = neighborPos.y - currentPos.y;
+        const len = Math.hypot(vx, vy);
+        if (len > 0) {
+          const nx = vx / len;
+          const ny = vy / len;
+          const dot = nx * targetVec.x + ny * targetVec.y;
+          if (dot > 0.15 && dot > maxDot) {
+            maxDot = dot;
+            bestNeighbor = neighbor;
+          }
+        }
       }
+    }
+
+    if (bestNeighbor) {
+      this.moveToCell(bestNeighbor);
     }
   }
 

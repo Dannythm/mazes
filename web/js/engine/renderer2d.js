@@ -619,39 +619,42 @@ export class Renderer2D {
     };
   }
 
-  findCellAtPointer(grid, pointerX, pointerY) {
-    if (!grid || !grid.cells) return null;
+  getCellScreenPos(c, grid) {
+    if (!c || !grid || !this.canvas) return { x: 0, y: 0 };
     const width = this.canvas.clientWidth;
     const height = this.canvas.clientHeight;
 
+    if (grid.shape === 'hexagon') {
+      const R = grid.hexRadius || 2;
+      const hexR = Math.min((width - 80) / ((2 * R + 1) * 1.732), (height - 80) / ((2 * R + 1) * 1.5));
+      return this.getAxialHexCenter(c.q, c.r, hexR, width / 2, height / 2);
+    } else if (grid.shape === 'triangle') {
+      const numRows = grid.rows || 4;
+      const side = Math.min((width - 80) / (numRows * 1.1), (height - 80) / (numRows * 0.866));
+      return this.getTrueTriCentroid(c.row, c.col, side, width / 2, (height - numRows * side * 0.866) / 2 + 10);
+    } else if (grid.shape === 'star') {
+      const maxR = Math.min(width, height) / 2 - 36;
+      return this.getStarCoords(c, width / 2, height / 2, grid.rings || 4, maxR);
+    } else if (grid.shape === 'circle') {
+      const maxR = Math.min(width, height) / 2 - 36;
+      const ringSpacing = maxR / (grid.rings || 4);
+      return this.getPolarCoords(c, width / 2, height / 2, ringSpacing);
+    } else {
+      const padding = 36;
+      const cellSize = Math.min((width - padding * 2) / grid.cols, (height - padding * 2) / grid.rows);
+      const offX = (width - cellSize * grid.cols) / 2;
+      const offY = (height - cellSize * grid.rows) / 2;
+      return { x: offX + (c.col + 0.5) * cellSize, y: offY + (c.row + 0.5) * cellSize };
+    }
+  }
+
+  findCellAtPointer(grid, pointerX, pointerY) {
+    if (!grid || !grid.cells) return null;
     let closestCell = null;
     let minDistance = Infinity;
 
     grid.cells.forEach(c => {
-      let pt = { x: 0, y: 0 };
-      if (grid.shape === 'hexagon') {
-        const R = grid.hexRadius || 2;
-        const hexR = Math.min((width - 80) / ((2 * R + 1) * 1.732), (height - 80) / ((2 * R + 1) * 1.5));
-        pt = this.getAxialHexCenter(c.q, c.r, hexR, width / 2, height / 2);
-      } else if (grid.shape === 'triangle') {
-        const numRows = grid.rows || 4;
-        const side = Math.min((width - 80) / (numRows * 1.1), (height - 80) / (numRows * 0.866));
-        pt = this.getTrueTriCentroid(c.row, c.col, side, width / 2, (height - numRows * side * 0.866) / 2 + 10);
-      } else if (grid.shape === 'star') {
-        const maxR = Math.min(width, height) / 2 - 36;
-        pt = this.getStarCoords(c, width / 2, height / 2, grid.rings || 4, maxR);
-      } else if (grid.shape === 'circle') {
-        const maxR = Math.min(width, height) / 2 - 36;
-        const ringSpacing = maxR / (grid.rings || 4);
-        pt = this.getPolarCoords(c, width / 2, height / 2, ringSpacing);
-      } else {
-        const padding = 36;
-        const cellSize = Math.min((width - padding * 2) / grid.cols, (height - padding * 2) / grid.rows);
-        const offX = (width - cellSize * grid.cols) / 2;
-        const offY = (height - cellSize * grid.rows) / 2;
-        pt = { x: offX + (c.col + 0.5) * cellSize, y: offY + (c.row + 0.5) * cellSize };
-      }
-
+      const pt = this.getCellScreenPos(c, grid);
       const dist = Math.hypot(pointerX - pt.x, pointerY - pt.y);
       if (dist < minDistance) {
         minDistance = dist;
