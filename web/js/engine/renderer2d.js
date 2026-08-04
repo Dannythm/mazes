@@ -72,7 +72,8 @@ export class Renderer2D {
   }
 
   // --- Smooth Corridor-Following Felt-Tip Brush Trail for Square/Rect/Hex (UNTOUCHED) ---
-  drawSmoothBrushTrail(points, brushWidth) {
+  // --- Dedicated Connected Line Trail Renderer for Square & Rectangle ---
+  drawSquareOrRectBrushTrail(points, brushWidth) {
     if (!points || points.length < 2) return;
 
     const pts = [points[0]];
@@ -108,18 +109,33 @@ export class Renderer2D {
     this.ctx.stroke();
   }
 
-  // --- DEDICATED LOW-PASS SMOOTHED TRIANGLE PATH TRAIL RENDERER ---
-  drawTriangleBrushTrail(historyCells, side, centerX, topY, brushWidth) {
-    if (!historyCells || historyCells.length < 2) return;
+  // --- Smooth Bezier Spline Brush Trail Renderer for Hexagon ---
+  drawSmoothBrushTrail(points, brushWidth) {
+    if (!points || points.length < 2) return;
 
-    const pts = historyCells.map(c => this.getTrueTriCentroid(c.row, c.col, side, centerX, topY));
+    const pts = [points[0]];
+    for (let i = 1; i < points.length; i++) {
+      if (Math.hypot(points[i].x - pts[pts.length - 1].x, points[i].y - pts[pts.length - 1].y) > 2) {
+        pts.push(points[i]);
+      }
+    }
     if (pts.length < 2) return;
 
-    const drawTrailPath = (ctx) => {
+    const drawSplinePath = (ctx) => {
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y);
+
+      if (pts.length === 2) {
+        ctx.lineTo(pts[1].x, pts[1].y);
+      } else {
+        const m0 = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+        ctx.lineTo(m0.x, m0.y);
+
+        for (let i = 1; i < pts.length - 1; i++) {
+          const mi = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
+          ctx.quadraticCurveTo(pts[i].x, pts[i].y, mi.x, mi.y);
+        }
+        ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
       }
     };
 
@@ -128,7 +144,7 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
-    drawTrailPath(this.ctx);
+    drawSplinePath(this.ctx);
     this.ctx.stroke();
 
     // Pass 2: Solid Felt-Tip Core
@@ -136,11 +152,69 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? '#00cec9' : '#e84393';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
-    drawTrailPath(this.ctx);
+    drawSplinePath(this.ctx);
     this.ctx.stroke();
   }
 
-  // --- SQUARE / RECTANGLE (UNTOUCHED) ---
+  // --- Smooth Low-Pass Filtered Triangle Brush Trail Renderer for Triangle ---
+  drawTriangleBrushTrail(historyCells, side, centerX, topY, brushWidth) {
+    if (!historyCells || historyCells.length < 2) return;
+
+    const rawPts = historyCells.map(c => this.getTrueTriCentroid(c.row, c.col, side, centerX, topY));
+    if (rawPts.length < 2) return;
+
+    const pts = [rawPts[0]];
+    for (let i = 1; i < rawPts.length; i++) {
+      if (Math.hypot(rawPts[i].x - pts[pts.length - 1].x, rawPts[i].y - pts[pts.length - 1].y) > 2) {
+        pts.push(rawPts[i]);
+      }
+    }
+    if (pts.length < 2) return;
+
+    const smoothed = [pts[0]];
+    for (let i = 1; i < pts.length - 1; i++) {
+      const sx = 0.25 * pts[i - 1].x + 0.5 * pts[i].x + 0.25 * pts[i + 1].x;
+      const sy = 0.25 * pts[i - 1].y + 0.5 * pts[i].y + 0.25 * pts[i + 1].y;
+      smoothed.push({ x: sx, y: sy });
+    }
+    smoothed.push(pts[pts.length - 1]);
+
+    const drawTriSpline = (ctx) => {
+      ctx.beginPath();
+      ctx.moveTo(smoothed[0].x, smoothed[0].y);
+
+      if (smoothed.length === 2) {
+        ctx.lineTo(smoothed[1].x, smoothed[1].y);
+      } else {
+        const m0 = { x: (smoothed[0].x + smoothed[1].x) / 2, y: (smoothed[0].y + smoothed[1].y) / 2 };
+        ctx.lineTo(m0.x, m0.y);
+
+        for (let i = 1; i < smoothed.length - 1; i++) {
+          const mi = { x: (smoothed[i].x + smoothed[i + 1].x) / 2, y: (smoothed[i].y + smoothed[i + 1].y) / 2 };
+          ctx.quadraticCurveTo(smoothed[i].x, smoothed[i].y, mi.x, mi.y);
+        }
+        ctx.lineTo(smoothed[smoothed.length - 1].x, smoothed[smoothed.length - 1].y);
+      }
+    };
+
+    // Pass 1: Soft Translucent Outer Glow
+    this.ctx.lineWidth = brushWidth * 1.25;
+    this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    drawTriSpline(this.ctx);
+    this.ctx.stroke();
+
+    // Pass 2: Solid Felt-Tip Core
+    this.ctx.lineWidth = brushWidth;
+    this.ctx.strokeStyle = this.theme === 'space' ? '#00cec9' : '#e84393';
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    drawTriSpline(this.ctx);
+    this.ctx.stroke();
+  }
+
+  // --- SQUARE / RECTANGLE ---
   renderSquareOrRect(grid, width, height) {
     const padding = 36;
     const availWidth = width - padding * 2;
@@ -162,7 +236,7 @@ export class Renderer2D {
       x: offsetX + (c.col + 0.5) * cellSize,
       y: offsetY + (c.row + 0.5) * cellSize
     }));
-    this.drawSmoothBrushTrail(trailPts, cellSize * 0.35);
+    this.drawSquareOrRectBrushTrail(trailPts, cellSize * 0.35);
 
     if (grid.startCell) {
       const sx = offsetX + (grid.startCell.col + 0.5) * cellSize;
