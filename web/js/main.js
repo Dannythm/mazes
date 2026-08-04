@@ -369,10 +369,10 @@ class App {
   moveToCell(cell) {
     this.playerCell = cell;
 
-    const existingIdx = this.pathHistory.indexOf(cell);
-    if (existingIdx !== -1) {
-      this.pathHistory = this.pathHistory.slice(0, existingIdx + 1);
-    } else {
+    // Immediate backtrack check: pop last cell if returning to immediate previous cell
+    if (this.pathHistory.length >= 2 && cell === this.pathHistory[this.pathHistory.length - 2]) {
+      this.pathHistory.pop();
+    } else if (this.pathHistory[this.pathHistory.length - 1] !== cell) {
       this.pathHistory.push(cell);
     }
 
