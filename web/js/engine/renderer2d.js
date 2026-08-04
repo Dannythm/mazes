@@ -778,10 +778,51 @@ export class Renderer2D {
 
   static calcDifficulty(size, shape) {
     let cellsCount = size * size;
-    if (shape === 'rectangle') cellsCount = Math.floor(size * 0.7) * Math.floor(size * 1.3);
-    if (shape === 'circle' || shape === 'star') cellsCount = (size / 2) * 16;
+    let minCells = 16;
+    let maxCells = 1024;
 
-    let score = Math.min(100, Math.max(0, Math.floor(((cellsCount - 16) / 2400) * 100)));
+    if (shape === 'square') {
+      cellsCount = size * size;
+      minCells = 16;
+      maxCells = 1024;
+    } else if (shape === 'rectangle') {
+      const rCount = size;
+      const cCount = Math.floor(size * 1.5);
+      cellsCount = rCount * cCount;
+      minCells = 24;
+      maxCells = 1536;
+    } else if (shape === 'hexagon') {
+      const r = Math.max(2, Math.floor(size / 3));
+      cellsCount = 3 * r * (r + 1) + 1;
+      minCells = 19;
+      maxCells = 400;
+    } else if (shape === 'triangle') {
+      const numRows = Math.max(4, Math.floor(size * 0.9));
+      cellsCount = numRows * numRows;
+      minCells = 16;
+      maxCells = 784;
+    } else if (shape === 'circle') {
+      const rings = Math.max(3, Math.floor(size / 2));
+      const sectorCounts = [1, 6, 12, 12, 24, 24, 24, 24, 24];
+      cellsCount = 0;
+      for (let i = 0; i < rings; i++) {
+        cellsCount += sectorCounts[Math.min(i, sectorCounts.length - 1)];
+      }
+      minCells = 19;
+      maxCells = 319;
+    } else if (shape === 'star') {
+      const rings = Math.max(3, Math.floor(size / 2));
+      const sectorCounts = [1, 5, 10, 10, 20, 20, 40, 40, 40];
+      cellsCount = 0;
+      for (let i = 0; i < rings; i++) {
+        cellsCount += sectorCounts[Math.min(i, sectorCounts.length - 1)];
+      }
+      minCells = 16;
+      maxCells = 466;
+    }
+
+    const ratio = (cellsCount - minCells) / Math.max(1, (maxCells - minCells));
+    const score = Math.min(100, Math.max(0, Math.floor(ratio * 100)));
 
     let label = 'VERY EASY';
     if (score > 80) label = 'EXTREME';
