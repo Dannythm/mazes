@@ -81,24 +81,13 @@ export class Renderer2D {
         pts.push(points[i]);
       }
     }
-
     if (pts.length < 2) return;
 
-    const drawSplinePath = (ctx) => {
+    const drawTrailPath = (ctx) => {
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
-
-      if (pts.length === 2) {
-        ctx.lineTo(pts[1].x, pts[1].y);
-      } else {
-        const m0 = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
-        ctx.lineTo(m0.x, m0.y);
-
-        for (let i = 1; i < pts.length - 1; i++) {
-          const mi = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
-          ctx.quadraticCurveTo(pts[i].x, pts[i].y, mi.x, mi.y);
-        }
-        ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
       }
     };
 
@@ -107,7 +96,7 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
-    drawSplinePath(this.ctx);
+    drawTrailPath(this.ctx);
     this.ctx.stroke();
 
     // Pass 2: Solid Felt-Tip Core
@@ -115,7 +104,7 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? '#00cec9' : '#e84393';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
-    drawSplinePath(this.ctx);
+    drawTrailPath(this.ctx);
     this.ctx.stroke();
   }
 
@@ -123,44 +112,14 @@ export class Renderer2D {
   drawTriangleBrushTrail(historyCells, side, centerX, topY, brushWidth) {
     if (!historyCells || historyCells.length < 2) return;
 
-    // 1. Compute raw cell centroid pixel coordinates
-    const rawPts = historyCells.map(c => this.getTrueTriCentroid(c.row, c.col, side, centerX, topY));
-    if (rawPts.length < 2) return;
-
-    // 2. Filter duplicate positions
-    const pts = [rawPts[0]];
-    for (let i = 1; i < rawPts.length; i++) {
-      if (Math.hypot(rawPts[i].x - pts[pts.length - 1].x, rawPts[i].y - pts[pts.length - 1].y) > 2) {
-        pts.push(rawPts[i]);
-      }
-    }
+    const pts = historyCells.map(c => this.getTrueTriCentroid(c.row, c.col, side, centerX, topY));
     if (pts.length < 2) return;
 
-    // 3. Apply 3-Tap Low-Pass Filter to eliminate high-frequency alternating cell teeth
-    const smoothed = [pts[0]];
-    for (let i = 1; i < pts.length - 1; i++) {
-      const sx = 0.25 * pts[i - 1].x + 0.5 * pts[i].x + 0.25 * pts[i + 1].x;
-      const sy = 0.25 * pts[i - 1].y + 0.5 * pts[i].y + 0.25 * pts[i + 1].y;
-      smoothed.push({ x: sx, y: sy });
-    }
-    smoothed.push(pts[pts.length - 1]);
-
-    // 4. Draw continuous midpoint quadratic splines through smoothed coordinates
-    const drawTriSpline = (ctx) => {
+    const drawTrailPath = (ctx) => {
       ctx.beginPath();
-      ctx.moveTo(smoothed[0].x, smoothed[0].y);
-
-      if (smoothed.length === 2) {
-        ctx.lineTo(smoothed[1].x, smoothed[1].y);
-      } else {
-        const m0 = { x: (smoothed[0].x + smoothed[1].x) / 2, y: (smoothed[0].y + smoothed[1].y) / 2 };
-        ctx.lineTo(m0.x, m0.y);
-
-        for (let i = 1; i < smoothed.length - 1; i++) {
-          const mi = { x: (smoothed[i].x + smoothed[i + 1].x) / 2, y: (smoothed[i].y + smoothed[i + 1].y) / 2 };
-          ctx.quadraticCurveTo(smoothed[i].x, smoothed[i].y, mi.x, mi.y);
-        }
-        ctx.lineTo(smoothed[smoothed.length - 1].x, smoothed[smoothed.length - 1].y);
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) {
+        ctx.lineTo(pts[i].x, pts[i].y);
       }
     };
 
@@ -169,7 +128,7 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
-    drawTriSpline(this.ctx);
+    drawTrailPath(this.ctx);
     this.ctx.stroke();
 
     // Pass 2: Solid Felt-Tip Core
@@ -177,7 +136,7 @@ export class Renderer2D {
     this.ctx.strokeStyle = this.theme === 'space' ? '#00cec9' : '#e84393';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
-    drawTriSpline(this.ctx);
+    drawTrailPath(this.ctx);
     this.ctx.stroke();
   }
 
