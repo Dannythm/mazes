@@ -103,7 +103,7 @@ export class Renderer2D {
     };
 
     // Pass 1: Soft Translucent Outer Glow
-    this.ctx.lineWidth = brushWidth * 1.5;
+    this.ctx.lineWidth = brushWidth * 1.25;
     this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
@@ -165,7 +165,7 @@ export class Renderer2D {
     };
 
     // Pass 1: Soft Translucent Outer Glow
-    this.ctx.lineWidth = brushWidth * 1.5;
+    this.ctx.lineWidth = brushWidth * 1.25;
     this.ctx.strokeStyle = this.theme === 'space' ? 'rgba(0, 206, 201, 0.35)' : 'rgba(232, 67, 147, 0.35)';
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';

@@ -368,7 +368,14 @@ class App {
 
   moveToCell(cell) {
     this.playerCell = cell;
-    this.pathHistory.push(cell);
+
+    const existingIdx = this.pathHistory.indexOf(cell);
+    if (existingIdx !== -1) {
+      this.pathHistory = this.pathHistory.slice(0, existingIdx + 1);
+    } else {
+      this.pathHistory.push(cell);
+    }
+
     this.moves++;
     sound.playStep();
 
