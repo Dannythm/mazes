@@ -79,6 +79,11 @@ export class InputHandler {
 
     // Keyboard Events for PC
     window.addEventListener('keydown', (e) => {
+      const target = e.target;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
       let dir = null;
       switch (e.key) {
         case 'ArrowUp':
